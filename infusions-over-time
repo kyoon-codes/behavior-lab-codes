@@ -1,0 +1,100 @@
+#MEASURING CORRECT LEVER PRESSES OVER TIME
+#Using Med. Associate Data
+
+#Hello friends, welcome to my (Kristine's) code for measuring self-administration data
+#I have added comments so that it will be easier to understand each line of code
+#There is a little bit of work to put into converting to raw data to excel spreadsheet
+#So if you haven't met with me before to talk about this, meet up with me :)
+#If you have further questions, just holla at yo gurl~
+
+#if you don't have these modules installed, go to the terminal IN YOUR PYTHON
+#type: pip install xlrd , pip install xlswriter , pip install math (this one should be in already)
+import xlrd
+import xlsxwriter
+import math
+
+#make sure that your excel file is in the python environment
+    #best way to check (in mac/pycharm): right click your project -->
+    # reveal in finder --> drag excel file here
+
+#insert the name of your excel file (don't add .xlsx as the second line of code adds it for you)
+filename = 'FentanylBursts'
+workbook = xlrd.open_workbook(filename + '.xlsx')
+
+#identifies the name of each sheet so if you rename it to your animal #/testing day you can find
+    #the data more easily
+sheet_names = workbook.sheet_names()
+
+#the name of the new excel file is called "coded(name of original file).xlsx"
+    #you can find in this same environment as your project
+    #to access this file on (mac/pycharm): double click on this sheet
+newworkbook = xlsxwriter.Workbook('coded' + filename + '.xlsx')
+newsheet = newworkbook.add_worksheet()
+
+#keeping track of columns -- need it at the very end to write data into nice columns
+column = 0
+
+#this starts looping through all the different sheets
+for shnum in range(0, workbook.nsheets):
+    sheet = workbook.sheet_by_index(shnum)
+    cells = [sheet.row_values(i) for i in range(0, sheet.nrows)]
+
+    #this sets up the lists for the coming data points
+    time_point = []
+    infusion = []
+    correct_counter = 0
+
+    #I thought it would look aesthetically pleasing if all the data looked about the same so
+        #I created a list with only zeros and at the time points the animal gets a reward
+        #the total number of reward reached at that time point is inserted
+        #any interval they did not receive reward is filled with zeroes
+    over_time = [0] * 120
+        #will need to change the 120 (in min) to 60 (in min) if your session is 1 hour
+
+    # keep track of time
+    time = 0
+
+    #this is starting to loop through every single cell in each sheet
+    for list in cells:
+        for value in list:
+            if isinstance(value, float) or isinstance(value, int):
+
+                #assuming that 0.2 is the output for reward received, increment increased and time
+                #point is inserted into the list time_point for keeping track of all thes times
+                # they received reward
+                    #0.2 is the reward received output in most of our med assoc. codes
+                    #but you'll need to double check
+                if value == 0.2:
+                    correct_counter += 1
+                    time_point.append(math.floor(time))
+                    infusion.append(correct_counter)
+
+                # 0.5 is not a time interval or correct output (i don't actually know what it is
+                # measuring) therefore I omitted these numbers in calculating the time between rewards
+                elif value != 0.5:
+                    time += (math.floor(value)) / 6000
+                    # we divide by 6000 to convert milliseconds to mins
+                    # we round down to the nearest millisecond here because I think the numbers
+                    # behind the decimal indicates other things depending on output of med assoc.
+
+    #this loop is inserting the total rewards received at timepoints into the large list of 0's
+    for i in range(len(infusion)):
+        over_time[(time_point[i])] = infusion[i]
+
+    #it goes through each sheet, it's also taking down the data into columns and writing into the
+        #new excel sheet's columns
+    for row_num, value in enumerate(over_time,1):
+        newsheet.write(row_num, column, value)
+    column += 1
+
+#adds the name of each "sheet" --> basically each animal
+for coltitle in range(0, workbook.nsheets):
+    newsheet.write (0, coltitle, sheet_names[coltitle])
+
+newworkbook.close()
+
+#now hit run and when python indicates the process is finished you can open the file
+#if you messed up the new excel file, just exit the file and rerun the code and it will replace it
+
+#I hope this makes analyzing your data more convenient, efficient, and mistake-proof!
+#Happy Science!
